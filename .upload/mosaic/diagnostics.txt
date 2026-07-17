@@ -1,0 +1,32 @@
+part_count=14
+.upload/mosaic/part-000.b64 chars=13336 decode=ok bytes=10000 ending=1x5QX1W9cA==
+.upload/mosaic/part-001.b64 chars=13336 decode=ok bytes=10000 ending=p3FFMnIBNw==
+.upload/mosaic/part-002.b64 chars=13336 decode=ok bytes=10000 ending=7R4PqDolJQ==
+.upload/mosaic/part-003.b64 chars=7482 decode=FAIL status=1 ending=7R4PqDolJQ== error=base64: invalid input 
+.upload/mosaic/part-004.b64 chars=13336 decode=ok bytes=10000 ending=m6M4eRsyog==
+.upload/mosaic/part-005.b64 chars=13336 decode=ok bytes=10000 ending=UEsDBAoAAA==
+.upload/mosaic/part-006.b64 chars=13336 decode=ok bytes=10000 ending=2ySBvHJeCw==
+.upload/mosaic/part-007.b64 chars=13336 decode=ok bytes=10000 ending=MiST7FzlGA==
+.upload/mosaic/part-008.b64 chars=12724 decode=ok bytes=9541 ending=DnDPQMpZVg==
+.upload/mosaic/part-009.b64 chars=13496 decode=ok bytes=10120 ending=U07YT6rTIQ==
+.upload/mosaic/part-010.b64 chars=13336 decode=ok bytes=10000 ending=l4Q9C2BYMw==
+.upload/mosaic/part-011.b64 chars=23587 decode=FAIL status=1 ending=OCCmCAAA0EAA error=base64: invalid input 
+.upload/mosaic/part-012.b64 chars=24434 decode=FAIL status=1 ending=OCCmCAAA0EAA error=base64: invalid input 
+.upload/mosaic/part-013.b64 chars=26383 decode=FAIL status=1 ending=OCCmCAAA0EAA error=base64: invalid input 
+joined_decode_status=1 joined_bytes=35610 joined_error=base64: invalid input 
+independent_unzip_status=9 independent_bytes=99661
+Archive:  /tmp/independent.zip
+  End-of-central-directory signature not found.  Either this file is not
+  a zipfile, or it constitutes one disk of a multi-part archive.  In the
+  latter case the central directory and zipfile comment will be found on
+  the last disk(s) of this archive.
+unzip:  cannot find zipfile directory in one of /tmp/independent.zip or
+        /tmp/independent.zip.zip, and cannot find /tmp/independent.zip.ZIP, period.
+joined_unzip_status=9 joined_bytes=35610
+Archive:  /tmp/joined.zip
+  End-of-central-directory signature not found.  Either this file is not
+  a zipfile, or it constitutes one disk of a multi-part archive.  In the
+  latter case the central directory and zipfile comment will be found on
+  the last disk(s) of this archive.
+unzip:  cannot find zipfile directory in one of /tmp/joined.zip or
+        /tmp/joined.zip.zip, and cannot find /tmp/joined.zip.ZIP, period.
