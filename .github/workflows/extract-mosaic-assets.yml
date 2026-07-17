@@ -5,6 +5,13 @@ on:
     branches:
       - main
       - agent/add-mosaic-assets-ready
+      - fix/mosaic-extract-v2
+    paths:
+      - '.upload/mosaic/**'
+      - '.github/workflows/extract-mosaic-assets.yml'
+  pull_request:
+    branches:
+      - main
     paths:
       - '.upload/mosaic/**'
       - '.github/workflows/extract-mosaic-assets.yml'
@@ -20,7 +27,7 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Rebuild, validate and extract archive
@@ -60,4 +67,4 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
           git commit -m 'Extract Walldecor99 mosaic website assets'
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
