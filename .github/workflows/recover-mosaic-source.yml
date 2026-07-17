@@ -1,0 +1,57 @@
+name: Recover Mosaic Source Assets
+
+on:
+  push:
+    branches:
+      - recover/mosaic-source
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Decode and extract archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          parts=(.upload/mosaic/part-*.b64)
+          test ${#parts[@]} -gt 0
+          archive=/tmp/mosaic-assets.zip
+          : > "$archive"
+          for part in "${parts[@]}"; do
+            echo "Decoding $part"
+            base64 --decode "$part" >> "$archive"
+          done
+          unzip -t "$archive"
+          rm -rf public/products/mosaic-tiles
+          unzip -o "$archive" -d .
+          test -f public/products/mosaic-tiles/products.json
+          test -f public/products/mosaic-tiles/mt-11-m-product.webp
+          find public/products/mosaic-tiles -type f | sort
+
+      - name: Commit recovered assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/products/mosaic-tiles
+          if git diff --cached --quiet; then
+            echo 'Assets already recovered.'
+            exit 0
+          fi
+          git commit -m 'Recover Walldecor99 mosaic website assets'
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
