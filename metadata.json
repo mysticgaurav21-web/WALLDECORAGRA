@@ -1,0 +1,8 @@
+{
+  "name": "Remix: WallDecor99",
+  "description": "A premium mobile-first interior catalogue featuring high-quality product discovery and seamless enquiry tools for modern home decor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
