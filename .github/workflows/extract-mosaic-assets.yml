@@ -3,8 +3,13 @@ name: Extract Mosaic Website Assets
 on:
   push:
     branches:
+      - fix/mosaic-extract-v2
+    paths:
+      - '.upload/mosaic/**'
+      - '.github/workflows/extract-mosaic-assets.yml'
+  pull_request:
+    branches:
       - main
-      - agent/add-mosaic-assets-ready
     paths:
       - '.upload/mosaic/**'
       - '.github/workflows/extract-mosaic-assets.yml'
@@ -20,44 +25,66 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
-      - name: Rebuild, validate and extract archive
+      - name: Diagnose archive parts
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
+          set +o pipefail
+          set -u
           shopt -s nullglob
           parts=(.upload/mosaic/part-*.b64)
-          if [ ${#parts[@]} -eq 0 ]; then
-            echo 'No archive parts found; the assets may already be extracted.'
-            exit 0
-          fi
+          report=.upload/mosaic/diagnostics.txt
+          : > "$report"
+          echo "part_count=${#parts[@]}" >> "$report"
 
-          archive=/tmp/walldecor99-mosaic-assets.zip
-          : > "$archive"
+          independent=/tmp/independent.zip
+          joined=/tmp/joined.zip
+          : > "$independent"
+
           for part in "${parts[@]}"; do
-            echo "Decoding $part"
-            base64 --decode "$part" >> "$archive"
+            chars=$(wc -c < "$part")
+            ending=$(tail -c 12 "$part" | tr -d '\n\r')
+            base64 --decode "$part" > /tmp/one.bin 2>/tmp/one.err
+            status=$?
+            if [ "$status" -eq 0 ]; then
+              bytes=$(wc -c < /tmp/one.bin)
+              cat /tmp/one.bin >> "$independent"
+              echo "$part chars=$chars decode=ok bytes=$bytes ending=$ending" >> "$report"
+            else
+              err=$(tr '\n' ' ' < /tmp/one.err)
+              echo "$part chars=$chars decode=FAIL status=$status ending=$ending error=$err" >> "$report"
+            fi
           done
 
-          unzip -t "$archive"
-          rm -rf public/products/mosaic-tiles
-          unzip -o "$archive" -d .
-          test -f public/products/mosaic-tiles/products.json
-          test -f public/products/mosaic-tiles/mt-11-m-product.webp
-          rm -rf .upload/mosaic
+          cat "${parts[@]}" | base64 --decode > "$joined" 2>/tmp/joined.err
+          joined_status=$?
+          echo "joined_decode_status=$joined_status joined_bytes=$(wc -c < "$joined") joined_error=$(tr '\n' ' ' < /tmp/joined.err)" >> "$report"
 
-      - name: Commit extracted website assets
+          unzip -t "$independent" >/tmp/independent-test.txt 2>&1
+          independent_status=$?
+          echo "independent_unzip_status=$independent_status independent_bytes=$(wc -c < "$independent")" >> "$report"
+          tail -n 8 /tmp/independent-test.txt >> "$report"
+
+          unzip -t "$joined" >/tmp/joined-test.txt 2>&1
+          joined_unzip_status=$?
+          echo "joined_unzip_status=$joined_unzip_status joined_bytes=$(wc -c < "$joined")" >> "$report"
+          tail -n 8 /tmp/joined-test.txt >> "$report"
+
+          cat "$report"
+          exit 0
+
+      - name: Commit diagnostics
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
-            echo 'Nothing to commit.'
-            exit 0
-          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'Extract Walldecor99 mosaic website assets'
-          git push origin HEAD:${{ github.ref_name }}
+          git add .upload/mosaic/diagnostics.txt
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Add mosaic archive diagnostics'
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
