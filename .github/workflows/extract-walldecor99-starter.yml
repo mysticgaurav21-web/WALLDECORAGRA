@@ -1,0 +1,74 @@
+name: Extract WallDecor99 Production Starter
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.upload/walldecor99/**'
+      - '.github/workflows/extract-walldecor99-starter.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-starter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Rebuild and extract WallDecor99 app
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f .upload/walldecor99/archive-000.bin ]; then
+            echo 'Archive has already been extracted.'
+            exit 0
+          fi
+
+          archive=/tmp/walldecor99-production-starter.tar.xz
+          cat \
+            .upload/walldecor99/archive-000.bin \
+            .upload/walldecor99/archive-001.bin \
+            .upload/walldecor99/archive-002.bin \
+            .upload/walldecor99/archive-003a.bin \
+            .upload/walldecor99/archive-003b.bin \
+            .upload/walldecor99/archive-004.bin \
+            .upload/walldecor99/archive-005.bin \
+            .upload/walldecor99/archive-006a.bin \
+            .upload/walldecor99/archive-006b.bin \
+            > "$archive"
+
+          xz -t "$archive"
+          rm -rf /tmp/walldecor99-unpack apps/walldecor99-nextjs
+          mkdir -p /tmp/walldecor99-unpack apps
+          tar -xJf "$archive" -C /tmp/walldecor99-unpack
+          mv /tmp/walldecor99-unpack/walldecor99 apps/walldecor99-nextjs
+
+          test -f apps/walldecor99-nextjs/package.json
+          test -f apps/walldecor99-nextjs/src/app/page.tsx
+          test -f apps/walldecor99-nextjs/supabase/migrations/202607190001_initial_schema.sql
+
+          rm -rf .upload/walldecor99
+
+      - name: Commit extracted application
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A apps/walldecor99-nextjs .upload/walldecor99
+
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit.'
+            exit 0
+          fi
+
+          git commit -m 'Add WallDecor99 production Next.js starter'
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
