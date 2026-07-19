@@ -1,0 +1,57 @@
+name: Extract WallDecor99 Production App
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.upload/walldecor99-production/**'
+      - '.github/workflows/extract-walldecor99-production-app.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Rebuild and extract application
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          parts=(.upload/walldecor99-production/part-*.b64)
+          test ${#parts[@]} -gt 0
+          archive=/tmp/WallDecor99-production-starter.zip
+          : > "$archive"
+          for part in "${parts[@]}"; do
+            base64 --decode "$part" >> "$archive"
+          done
+          unzip -t "$archive"
+          rm -rf /tmp/walldecor99-extract walldecor99-production-app
+          mkdir -p /tmp/walldecor99-extract
+          unzip -q "$archive" -d /tmp/walldecor99-extract
+          mv /tmp/walldecor99-extract/walldecor99 walldecor99-production-app
+          test -f walldecor99-production-app/package.json
+          test -f walldecor99-production-app/src/app/page.tsx
+
+      - name: Commit extracted application
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add walldecor99-production-app .upload/walldecor99-production
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit.'
+            exit 0
+          fi
+          git commit -m 'Extract WallDecor99 production Next.js application'
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
